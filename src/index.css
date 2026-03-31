@@ -1,0 +1,61 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #09090b;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  height: 100dvh;
+}
+
+/* React Flow overrides */
+.react-flow__background {
+  background-color: #09090b;
+}
+
+.react-flow__edge-path {
+  stroke: #3f3f46;
+  stroke-width: 1.5;
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke: #7c3aed;
+  stroke-dasharray: 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+
+@keyframes dashdraw {
+  from { stroke-dashoffset: 10; }
+}
+
+.react-flow__controls {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.react-flow__controls-button {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #27272a;
+  color: #71717a;
+  fill: #71717a;
+}
+
+.react-flow__controls-button:hover {
+  background: #27272a;
+  fill: #e4e4e7;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none;
+}
