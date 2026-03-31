@@ -14,7 +14,7 @@ export async function expandConcept(
   const client = getClient(apiKey);
 
   const existing = existingConcepts.length > 0
-    ? `\n\nAlready on the map (avoid duplicating): ${existingConcepts.join(', ')}`
+    ? `\n\nAlready on the map (avoid duplicating these): ${existingConcepts.join(', ')}`
     : '';
 
   const response = await client.messages.create({
@@ -23,18 +23,17 @@ export async function expandConcept(
     messages: [
       {
         role: 'user',
-        content: `You are helping someone explore ideas spatially on a mind map.
+        content: `You are an idea generator helping someone brainstorm within "${rootConcept}".
 
-Root topic: "${rootConcept}"
-Concept to expand: "${concept}"${existing}
+They want to explore: "${concept}"${existing}
 
-Generate 5-7 distinct concepts that relate to "${concept}" in the context of "${rootConcept}". Focus on ideas that are genuinely useful for spatial exploration — things that reveal structure, contrast, or surprising connections.
+Generate 5-7 specific, concrete ideas within "${concept}". Go one level more specific — not abstract subtopics or categories, but actual ideas, examples, dishes, projects, recipes, names, or things you could act on. The user wants to eventually drill all the way down to a single concrete idea.
 
 Return ONLY a JSON array (no markdown, no explanation):
 [
   {
-    "concept": "short concept name (2-5 words)",
-    "relationship": "how it relates to ${concept} (3-8 words)",
+    "concept": "specific idea (2-6 words)",
+    "relationship": "short phrase connecting it to "${concept}" (2-6 words)",
     "type": one of: "is_a" | "leads_to" | "requires" | "contrasts_with" | "example_of" | "part_of" | "enables" | "related_to"
   }
 ]`,
@@ -60,7 +59,7 @@ export async function generateFollowUpQuestions(
     messages: [
       {
         role: 'user',
-        content: `Someone wants to explore the idea of "${topic}" on a concept map. Ask them 1-2 short, focused follow-up questions that will help you understand their specific angle, goal, or context — so you can generate more relevant concepts for them.
+        content: `Someone wants to brainstorm "${topic}" using an interactive idea map. Ask them 1-2 short, focused follow-up questions to understand their specific angle, constraints, or goals — so the ideas generated are more relevant and concrete.
 
 Return ONLY a JSON array of question strings (no markdown, no explanation):
 ["question 1", "question 2"]`,
@@ -82,7 +81,7 @@ export async function generateRootConcepts(
   const client = getClient(apiKey);
 
   const contextBlock = context.trim()
-    ? `\n\nAdditional context from the user:\n${context.trim()}`
+    ? `\n\nContext from the user:\n${context.trim()}`
     : '';
 
   const response = await client.messages.create({
@@ -91,15 +90,15 @@ export async function generateRootConcepts(
     messages: [
       {
         role: 'user',
-        content: `You are helping someone explore the idea of "${topic}" spatially on a mind map.${contextBlock}
+        content: `You are an idea generator helping someone brainstorm "${topic}".${contextBlock}
 
-Generate 6-8 core concepts that radiate out from "${topic}" — the most important dimensions, aspects, or related ideas that someone should explore. Make them specific to the user's context and goals, diverse, and thought-provoking.
+Generate 6-8 starting ideas that branch out from "${topic}". These should be specific enough to be interesting and explorable — not abstract categories or meta-concepts, but actual ideas, directions, cuisines, styles, approaches, or examples someone could click into and keep drilling down. Think of these as the first layer of a brainstorm, not an outline.
 
 Return ONLY a JSON array (no markdown, no explanation):
 [
   {
-    "concept": "short concept name (2-5 words)",
-    "relationship": "how it relates to ${topic} (3-8 words)",
+    "concept": "specific idea (2-6 words)",
+    "relationship": "short phrase connecting it to "${topic}" (2-6 words)",
     "type": one of: "is_a" | "leads_to" | "requires" | "contrasts_with" | "example_of" | "part_of" | "enables" | "related_to"
   }
 ]`,
