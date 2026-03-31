@@ -13,7 +13,7 @@ import type { Node, Edge, Connection } from '@xyflow/react';
 import { IdeaNode } from './components/IdeaNode';
 import { IdeaEdge } from './components/EdgeLabel';
 import { useSessionKey } from './hooks/useSessionKey';
-import { expandConcept, generateRootConcepts } from './lib/claude';
+import { expandConcept, generateRootConcepts, generateFollowUpQuestions } from './lib/claude';
 
 const NODE_TYPES = { idea: IdeaNode };
 const EDGE_TYPES = { idea: IdeaEdge };
@@ -45,7 +45,9 @@ const genId = () => `n${++nodeIdCounter}`;
 export default function App() {
   const [apiKey, setApiKey] = useSessionKey();
   const [topic, setTopic] = useState('');
-  const [phase, setPhase] = useState<'setup' | 'exploring'>('setup');
+  const [phase, setPhase] = useState<'setup' | 'questioning' | 'exploring'>('setup');
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [answers, setAnswers] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -134,8 +136,23 @@ export default function App() {
     [apiKey, setNodes, setEdges]
   );
 
-  const handleStart = async () => {
+  const handleTopicSubmit = async () => {
     if (!apiKey.trim() || !topic.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const qs = await generateFollowUpQuestions(apiKey, topic);
+      setQuestions(qs);
+      setAnswers(qs.map(() => ''));
+      setPhase('questioning');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to generate questions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBuildMap = async () => {
     setLoading(true);
     setError(null);
     topicRef.current = topic;
@@ -143,8 +160,13 @@ export default function App() {
     nodeIdCounter = 0;
     angleRef.current = new Map();
 
+    const context = questions
+      .map((q, i) => (answers[i].trim() ? `${q}\n${answers[i].trim()}` : ''))
+      .filter(Boolean)
+      .join('\n\n');
+
     try {
-      const concepts = await generateRootConcepts(apiKey, topic);
+      const concepts = await generateRootConcepts(apiKey, topic, context);
 
       const rootId = genId();
       const positions = positionChildren(0, 0, concepts.length, 1);
@@ -193,6 +215,8 @@ export default function App() {
     setNodes([]);
     setEdges([]);
     setTopic('');
+    setQuestions([]);
+    setAnswers([]);
     conceptsRef.current = [];
     angleRef.current = new Map();
     topicRef.current = '';
@@ -227,7 +251,7 @@ export default function App() {
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleStart()}
+                onKeyDown={(e) => e.key === 'Enter' && handleTopicSubmit()}
                 placeholder="e.g. 50-day project ideas"
                 className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               />
@@ -240,12 +264,72 @@ export default function App() {
             )}
 
             <button
-              onClick={handleStart}
+              onClick={handleTopicSubmit}
               disabled={!apiKey.trim() || !topic.trim() || loading}
               className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
             >
-              {loading ? 'Exploring...' : 'Start exploring →'}
+              {loading ? 'Thinking...' : 'Continue →'}
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === 'questioning') {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-white tracking-tight">🧭 Idea Explorer</h1>
+            <p className="text-sm text-zinc-500 mt-1">
+              A bit more context helps build a better map
+            </p>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col gap-5">
+            <div className="text-xs text-zinc-500 px-1">
+              Topic: <span className="text-zinc-300 font-medium">{topic}</span>
+            </div>
+
+            {questions.map((q, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <label className="text-sm text-zinc-300 leading-snug">{q}</label>
+                <textarea
+                  value={answers[i]}
+                  onChange={(e) => {
+                    const next = [...answers];
+                    next[i] = e.target.value;
+                    setAnswers(next);
+                  }}
+                  placeholder="Optional — skip if you'd rather just explore"
+                  rows={2}
+                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+                />
+              </div>
+            ))}
+
+            {error && (
+              <p className="text-xs text-red-400 bg-red-950/50 border border-red-900 rounded-xl px-4 py-3">
+                {error}
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleReset}
+                className="px-4 py-2.5 rounded-xl border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-zinc-200 text-sm transition-colors"
+              >
+                ← Back
+              </button>
+              <button
+                onClick={handleBuildMap}
+                disabled={loading}
+                className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+              >
+                {loading ? 'Building map...' : 'Build map →'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

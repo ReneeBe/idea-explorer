@@ -48,11 +48,42 @@ Return ONLY a JSON array (no markdown, no explanation):
   return JSON.parse(json) as GeneratedConcept[];
 }
 
-export async function generateRootConcepts(
+export async function generateFollowUpQuestions(
   apiKey: string,
   topic: string
+): Promise<string[]> {
+  const client = getClient(apiKey);
+
+  const response = await client.messages.create({
+    model: 'claude-opus-4-6',
+    max_tokens: 256,
+    messages: [
+      {
+        role: 'user',
+        content: `Someone wants to explore the idea of "${topic}" on a concept map. Ask them 1-2 short, focused follow-up questions that will help you understand their specific angle, goal, or context — so you can generate more relevant concepts for them.
+
+Return ONLY a JSON array of question strings (no markdown, no explanation):
+["question 1", "question 2"]`,
+      },
+    ],
+  });
+
+  const text = response.content[0].type === 'text' ? response.content[0].text : '';
+  const json = text.match(/\[[\s\S]*\]/)?.[0];
+  if (!json) throw new Error('No JSON in response');
+  return JSON.parse(json) as string[];
+}
+
+export async function generateRootConcepts(
+  apiKey: string,
+  topic: string,
+  context: string
 ): Promise<GeneratedConcept[]> {
   const client = getClient(apiKey);
+
+  const contextBlock = context.trim()
+    ? `\n\nAdditional context from the user:\n${context.trim()}`
+    : '';
 
   const response = await client.messages.create({
     model: 'claude-opus-4-6',
@@ -60,9 +91,9 @@ export async function generateRootConcepts(
     messages: [
       {
         role: 'user',
-        content: `You are helping someone explore the idea of "${topic}" spatially on a mind map.
+        content: `You are helping someone explore the idea of "${topic}" spatially on a mind map.${contextBlock}
 
-Generate 6-8 core concepts that radiate out from "${topic}" — the most important dimensions, aspects, or related ideas that someone should explore. Make them diverse and thought-provoking.
+Generate 6-8 core concepts that radiate out from "${topic}" — the most important dimensions, aspects, or related ideas that someone should explore. Make them specific to the user's context and goals, diverse, and thought-provoking.
 
 Return ONLY a JSON array (no markdown, no explanation):
 [
