@@ -1,73 +1,33 @@
-# React + TypeScript + Vite
+# Idea Explorer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A spatial concept map that helps you brainstorm ideas by letting you drill from a vague topic all the way down to something specific and actionable. Day 13 of my [50 projects challenge](https://reneebe.github.io).
 
-Currently, two official plugins are available:
+**[Live demo →](https://reneebe.github.io/idea-explorer/)**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## How it works
 
-## React Compiler
+1. Enter a starting topic (e.g. "vegetarian meal plan ideas", "50-day project ideas")
+2. Answer 1-2 follow-up questions from Claude to give it context (optional but helpful)
+3. Claude generates 6-8 starting ideas radiating out from your topic
+4. Click any node to expand it with more specific ideas
+5. Keep drilling until you reach something concrete
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Why ideas, not topics
 
-## Expanding the ESLint configuration
+The first version surfaced abstract categories — things like *weekly batch cooking* or *seasonal produce rotation* for a vegetarian meal planning topic. Not useful. The prompts were rewritten to ask for concrete, actionable ideas at every level: things like *Italian cuisine*, *high-protein vegetarian meals*, *seitan recipes*, drilling down to *tofu with cilantro lime rice and beans*.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- [Vite](https://vite.dev/) + [React](https://react.dev/) + TypeScript
+- [Tailwind CSS v4](https://tailwindcss.com/)
+- [React Flow](https://reactflow.dev/) for the interactive graph
+- [Claude](https://anthropic.com) (`claude-opus-4-6`) for ideation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Running locally
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+You'll need a Claude API key from [Anthropic Console](https://console.anthropic.com).
