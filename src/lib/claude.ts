@@ -1,8 +1,29 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { GeneratedConcept } from '../types';
 
+const MAGICLINK_URL = 'https://magiclink.reneebe.workers.dev';
+
 function getClient(apiKey: string) {
   return new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+}
+
+async function callClaude(
+  apiKey: string,
+  params: { model: string; max_tokens: number; messages: { role: 'user'; content: string }[] }
+): Promise<{ content: Array<{ type: string; text?: string }> }> {
+  if (window.magiclink?.hasToken) {
+    const token = localStorage.getItem('magiclink_token');
+    const res = await fetch(`${MAGICLINK_URL}/api/proxy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, projectId: 'idea-explorer', provider: 'claude', request: params }),
+    });
+    const json = await res.json() as { result?: { content: Array<{ type: string; text?: string }> }; error?: string };
+    if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    return json.result!;
+  }
+  const client = getClient(apiKey);
+  return client.messages.create(params);
 }
 
 export async function expandConcept(
@@ -11,13 +32,11 @@ export async function expandConcept(
   rootConcept: string,
   existingConcepts: string[]
 ): Promise<GeneratedConcept[]> {
-  const client = getClient(apiKey);
-
   const existing = existingConcepts.length > 0
     ? `\n\nAlready on the map (avoid duplicating these): ${existingConcepts.join(', ')}`
     : '';
 
-  const response = await client.messages.create({
+  const response = await callClaude(apiKey, {
     model: 'claude-opus-4-6',
     max_tokens: 1024,
     messages: [
@@ -41,7 +60,7 @@ Return ONLY a JSON array (no markdown, no explanation):
     ],
   });
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : '';
+  const text = response.content[0].type === 'text' ? (response.content[0].text ?? '') : '';
   const json = text.match(/\[[\s\S]*\]/)?.[0];
   if (!json) throw new Error('No JSON in response');
   return JSON.parse(json) as GeneratedConcept[];
@@ -51,9 +70,7 @@ export async function generateFollowUpQuestions(
   apiKey: string,
   topic: string
 ): Promise<string[]> {
-  const client = getClient(apiKey);
-
-  const response = await client.messages.create({
+  const response = await callClaude(apiKey, {
     model: 'claude-opus-4-6',
     max_tokens: 256,
     messages: [
@@ -67,7 +84,7 @@ Return ONLY a JSON array of question strings (no markdown, no explanation):
     ],
   });
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : '';
+  const text = response.content[0].type === 'text' ? (response.content[0].text ?? '') : '';
   const json = text.match(/\[[\s\S]*\]/)?.[0];
   if (!json) throw new Error('No JSON in response');
   return JSON.parse(json) as string[];
@@ -78,13 +95,11 @@ export async function generateRootConcepts(
   topic: string,
   context: string
 ): Promise<GeneratedConcept[]> {
-  const client = getClient(apiKey);
-
   const contextBlock = context.trim()
     ? `\n\nContext from the user:\n${context.trim()}`
     : '';
 
-  const response = await client.messages.create({
+  const response = await callClaude(apiKey, {
     model: 'claude-opus-4-6',
     max_tokens: 1024,
     messages: [
@@ -106,7 +121,7 @@ Return ONLY a JSON array (no markdown, no explanation):
     ],
   });
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : '';
+  const text = response.content[0].type === 'text' ? (response.content[0].text ?? '') : '';
   const json = text.match(/\[[\s\S]*\]/)?.[0];
   if (!json) throw new Error('No JSON in response');
   return JSON.parse(json) as GeneratedConcept[];
