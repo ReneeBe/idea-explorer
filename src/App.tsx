@@ -12,7 +12,6 @@ import {
 import type { Node, Edge, Connection } from '@xyflow/react';
 import { IdeaNode } from './components/IdeaNode';
 import { IdeaEdge } from './components/EdgeLabel';
-import { useSessionKey } from './hooks/useSessionKey';
 import { expandConcept, generateRootConcepts, generateFollowUpQuestions } from './lib/claude';
 
 const NODE_TYPES = { idea: IdeaNode };
@@ -43,7 +42,6 @@ let nodeIdCounter = 0;
 const genId = () => `n${++nodeIdCounter}`;
 
 export default function App() {
-  const [apiKey, setApiKey] = useSessionKey();
   const [topic, setTopic] = useState('');
   const [phase, setPhase] = useState<'setup' | 'questioning' | 'exploring'>('setup');
   const [questions, setQuestions] = useState<string[]>([]);
@@ -78,7 +76,7 @@ export default function App() {
         expandingRef.current.add(nodeId);
         setError(null);
 
-        expandConcept(apiKey, concept, topicRef.current, conceptsRef.current)
+        expandConcept(concept, topicRef.current, conceptsRef.current)
           .then((concepts) => {
             const positions = positionChildren(
               nodeEl.position.x,
@@ -133,17 +131,15 @@ export default function App() {
         );
       });
     },
-    [apiKey, setNodes, setEdges]
+    [setNodes, setEdges]
   );
 
-  const hasMagicLink = !!window.magiclink?.hasToken;
-
   const handleTopicSubmit = async () => {
-    if ((!hasMagicLink && !apiKey.trim()) || !topic.trim()) return;
+    if (!topic.trim()) return;
     setLoading(true);
     setError(null);
     try {
-      const qs = await generateFollowUpQuestions(apiKey, topic);
+      const qs = await generateFollowUpQuestions(topic);
       setQuestions(qs);
       setAnswers(qs.map(() => ''));
       setPhase('questioning');
@@ -168,7 +164,7 @@ export default function App() {
       .join('\n\n');
 
     try {
-      const concepts = await generateRootConcepts(apiKey, topic, context);
+      const concepts = await generateRootConcepts(topic, context);
 
       const rootId = genId();
       const positions = positionChildren(0, 0, concepts.length, 1);
@@ -235,25 +231,6 @@ export default function App() {
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col gap-4">
-            {hasMagicLink ? (
-              <div className="rounded-xl border border-violet-500/30 bg-violet-500/5 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-widest text-violet-400">Demo mode active</p>
-                <p className="mt-0.5 text-xs text-zinc-500">You have 5 uses — no API key needed.</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-zinc-400">Claude API Key</label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-ant-..."
-                  className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                />
-                <p className="text-xs text-zinc-600">Stored in session only.</p>
-              </div>
-            )}
-
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-zinc-400">Starting concept</label>
               <input
@@ -274,7 +251,7 @@ export default function App() {
 
             <button
               onClick={handleTopicSubmit}
-              disabled={(!hasMagicLink && !apiKey.trim()) || !topic.trim() || loading}
+              disabled={!topic.trim() || loading}
               className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
             >
               {loading ? 'Thinking...' : 'Continue →'}
