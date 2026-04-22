@@ -238,7 +238,7 @@ export default function App() {
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleTopicSubmit()}
-                placeholder="e.g. 50-day project ideas"
+                placeholder="e.g. sustainable architecture"
                 className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
               />
             </div>
