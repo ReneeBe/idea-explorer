@@ -14,7 +14,7 @@ A spatial concept map that helps you brainstorm ideas by letting you drill from 
 
 ## Why ideas, not topics
 
-The first version surfaced abstract categories — things like *weekly batch cooking* or *seasonal produce rotation* for a vegetarian meal planning topic. Not useful. The prompts were rewritten to ask for concrete, actionable ideas at every level: things like *Italian cuisine*, *high-protein vegetarian meals*, *seitan recipes*, drilling down to *tofu with cilantro lime rice and beans*.
+The first version surfaced abstract categories, things like *weekly batch cooking* or *seasonal produce rotation* for a vegetarian meal planning topic. Not useful. The prompts were rewritten to ask for concrete, actionable ideas at every level: things like *Italian cuisine*, *high-protein vegetarian meals*, *seitan recipes*, drilling down to *tofu with cilantro lime rice and beans*.
 
 ## Stack
 
@@ -23,11 +23,13 @@ The first version surfaced abstract categories — things like *weekly batch coo
 - [React Flow](https://reactflow.dev/) for the interactive graph
 - [Claude](https://anthropic.com) (`claude-opus-4-6`) for ideation
 
+## Auth
+
+No API key needed. The app includes a daily visitor pool for free usage. [MagicLink](https://magiclink.reneebe.workers.dev/resume) tokens provide additional access (20 uses across all projects).
+
 ## Running locally
 
 ```bash
 npm install
 npm run dev
 ```
-
-You'll need a Claude API key from [Anthropic Console](https://console.anthropic.com).
